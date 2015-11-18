@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Title</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+      img { max-height: 40%; max-width: 100%; }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# First web application in 5 minutes
+### Michal J. Gajda
+
+## Presented on Haskell.SG Web Edition
+## DevFest.Asia
+
+### Nov 18th 2015
+
+---
+# Goal of the talk
+
+### Show that web development in Haskell is simple
+### Give intuition of handling requests
+### Prepare for another tutorial sessions:
+#### Sunday Nov 22nd 14:00 - Developing web app in practice
+#### Saturday Dec 12th 14:00 - Testing web app with hSpec
+
+---
+# My setup
+
+### Latest Haskell Platform
+### `cabal install -j4 Spock`
+### Any platform - tutors help with:
+* Mac OS-X
+* Windows
+* Linux
+* RasPi
+
+---
+# Start WAI server
+
+### [Web Application Interface](https://hackage.haskell.org/package/wai)
+
+```haskell
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings   #-}
+module Main(main) where
+
+import Web.Spock.Safe
+
+main :: IO ()
+main =
+    runSpock 8080 $
+      spockT id $
+        do get root $ text "Hello world!"
+```
+### Test by opening [http://localhost:8080/](http://localhost:8080/)
+
+---
+# Add HTML
+
+```haskell
+main :: IO ()
+main =
+    runSpock 8080 $
+      spockT id $
+        do get root $ text "Hello world!"
+           get (root <//> "hello.html") $
+             html "<html>Hello world!<img src=\"static/cat.jpg\"></html>"
+           get (root <//> "static" <//> "cat.jpg") $
+             file "cat.jpg" "static/cat.jpg"
+```
+
+---
+# Add JSON
+
+```haskell
+import qualified Data.Aeson  as JSON
+import qualified Data.Vector as V
+
+main :: IO ()
+main =
+    runSpock 8080 $
+      spockT id $
+        do get (root <//> "api") $
+             json $ JSON.Array $ V.fromList [
+	       JSON.Number $ 1+1/2,
+	       JSON.String " users are ",
+	       JSON.Bool True]
+```
+
+---
+# More on Sunday...
+
+### SQL service
+### Authentication
+### Use middleware to serve everything from `static/` directory
+
+    </textarea>
+    <script src="https://gnab.github.io/remark/downloads/remark-latest.min.js">
+    <!--script src="remark/src/remark.js"-->
+    </script>
+    <script>
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
