@@ -25,7 +25,8 @@ main =
         -- Serve all files from static/ directory as-is, and only serve other endpoints afterwards.
         middleware $ staticPolicy $ hasPrefix "static"
         get root $
-          html'  $ do
+          lazyHtml $
+            return $ do
               toHtml ("Hello World!" :: String)
               img ! src "static/cat.jpg"
         --get (root <//> "static" <//> "cat.jpg") $
@@ -33,11 +34,8 @@ main =
         --get (root <//> "api") $
         --  json $ JSON.Array $ V.fromList [JSON.Number $ 1+1/2, JSON.String " users are ", JSON.Bool True]
 
--- | Send text as a response body. Content-Type will be "text/plain"
-html' :: MonadIO m => Html -> ActionCtxT ctx m a
-html' = lazyHtml . return . renderMarkup
-
 lazyHtml generator =
     do setHeader "Content-Type" "text/html; charset=utf-8"
-       (lazyBytes . T.encodeUtf8) =<< generator
+       responseBody <- generator
+       lazyBytes $ T.encodeUtf8 $ renderMarkup responseBody
 
