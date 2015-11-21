@@ -35,7 +35,9 @@ main =
 
 -- | Send text as a response body. Content-Type will be "text/plain"
 html' :: MonadIO m => Html -> ActionCtxT ctx m a
-html' val =
+html' = lazyHtml . return . renderMarkup
+
+lazyHtml generator =
     do setHeader "Content-Type" "text/html; charset=utf-8"
-       lazyBytes $ T.encodeUtf8 $ renderMarkup val
+       (lazyBytes . T.encodeUtf8) =<< generator
 
