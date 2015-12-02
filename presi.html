@@ -84,9 +84,74 @@ main =
            get (root <//> "static" <//> "cat.jpg") $
              file "cat.jpg" "static/cat.jpg"
 ```
-
 ---
-# Add JSON
+# Serve HTML/images using middleware
+
+### Serve all files from static/ directory as-is, and only serve other endpoints afterwards.
+### `cabal install wai-middleware-static`
+```haskell
+import           Network.Wai.Middleware.Static
+
+main :: IO ()
+main =
+    runSpock 8080 $
+      spockT id $ do
+        middleware $ staticPolicy $ hasPrefix "static"
+        get root $
+          html "<html>Hello world!<img src=\"static/cat.jpg\"></html>"
+```
+---
+# Building dynamic HTML
+
+### `cabal install blaze-html`
+
+```haskell
+import qualified Data.Text.Lazy          as T
+import qualified Data.Text.Lazy.Encoding as T
+-- blaze-html for HTML construction
+import           Text.Blaze.Html4.Strict            hiding (map, html)
+import           Text.Blaze.Html4.Strict.Attributes hiding (title, id)
+import           Text.Blaze.Renderer.Text                  (renderMarkup)
+
+main :: IO ()
+main =
+    runSpock 8080 $
+      spockT id $ do
+        get root $
+          lazyHtml $
+            return $ do
+              toHtml ("Hello World!" :: String)
+              img ! src "static/cat.jpg"
+
+lazyHtml generator =
+    do setHeader "Content-Type" "text/html; charset=utf-8"
+       responseBody <- generator
+       lazyBytes $ T.encodeUtf8 $ renderMarkup responseBody
+```
+---
+# Basic authentication
+
+```haskell
+main =
+    runSpock 8080 $
+      spockT id $ do
+        get "admin" $
+          requireBasicAuth "Enter admin credentials"
+	                    checkCredentials
+	                    credentialsOk
+  where
+    checkCredentials "admin" "topSECRETpassword" =
+            lazyHtml $ toHtml ("Admin logged in." :: String)
+    checkCredentials _       _                   = do
+            setStatus unauthorized401
+            lazyHtml $ toHtml ("Incorrect admin credentials." :: String)
+    credentialsOk () =
+            lazyHtml $ toHtml ("Credentials correct." :: String)
+```
+---
+# Make JSON API
+
+### First `cabal install aeson`
 
 ```haskell
 import qualified Data.Aeson  as JSON
